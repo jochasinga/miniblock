@@ -35,6 +35,11 @@ class Chain(object):
 
 class Node(object):
     """
+    A Node represents a block in a unique blockchain. It contains a unique hash,
+    a reference to the previous block's hash, and the hard reference to its parent chain.
+    The most forward Node should be responsible for creating a new Node and update 
+    the Chain for bookkeeping purpose.
+    
     >>> node = Node()
     >>> assert node is not None
     >>> assert node.hash == ''
@@ -42,8 +47,10 @@ class Node(object):
     >>> assert node.id == 0
     >>> assert node.data is None
     >>> assert node.is_genesis() 
-    >>> node.new_block()
-    >>> assert node.chain.size == 2
+    >>> node.new_block('0123456789')
+    >>> chain_size = node.chain.size
+    >>> assert chain_size == 2
+    >>> assert node.chain[chain_size - 1].hash == '0123456789'
     """
     def __init__(self):
         self.chain = Chain()
@@ -55,8 +62,9 @@ class Node(object):
     def is_genesis(self):
         return not (self.id and self.previous_hashes)
 
-    def new_block(self):
+    def new_block(self, hash_str=''):
         forward_block = Node()
+        forward_block.hash = hash_str
         self.chain = self.chain.append(forward_block)
     
         
