@@ -1,3 +1,4 @@
 # miniblock
 
-A small, light-weight blockchain engine 
+A small light-weight blockchain engine. 
+
