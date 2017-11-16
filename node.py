@@ -1,82 +1,92 @@
+"""
+"""
+
 import hashlib
 
 class Chain(object):
     """
     A Chain is a merkel chain in a form of a singly-linked list.
-    Each node holds a reference to the previous peer's hash, not the pointer.
-    Each node also keeps a reference to an atomic chain. 
+    Each node holds a reference to the previous peer's hash, which
+    is formed by hashing the previous node's hash string concatenated
+    by the string representation of the current node's data.
+    Each node also keeps a reference to an atomic chain.
 
     >>> starting_hash = hashlib.md5('foobarbaz').hexdigest()
-    >>> gen_node = Node(starting_hash)
-    >>> chain = Chain(gen_node)
-    >>> assert chain is not None
-    >>> assert len(chain._chain)
-    >>> target = hashlib.md5('foobarbaz').hexdigest()
-    >>> original = chain._chain[0]
-    >>> assert original == target
+    >>> gen_node = Node(data=None, hash_str=starting_hash)
+    >>> chain = Chain(genesis=gen_node)
+    >>> assert chain
+    >>> assert chain.size
+    >>> assert chain.genesis.hash == starting_hash
     """
-    id = 0
-    
-    def __init__(self, gen=None):
-        """In order to initiate a chain, a genesis block node is needed"""
-        self.gen = gen
-        if self.gen is None:
+    __genesis = None
+
+    def __init__(self, genesis=None):
+        """
+        In order to initiate a chain, a genesis block node is needed.
+        Otherwise, a default one is created.
+        """
+        if not genesis:
             hash_str = hashlib.md5('doodlepoodlemoodledoo').hexdigest()
-            self.gen = Node(hash_str, genesis=True)
+            Chain.__genesis = Node(hash_str)
+        else:
+            Chain.__genesis = genesis
 
-        self.gen.id = self.id
-        self.id += 1
-        self._chain = [self.gen.hash]
-        self.gen.chain = self
-        
-    def append(self, node):
-        if node.hash:
-            self._chain.append(node.hash)
-            return self._chain
-        
-        raise ValueError('New block node is missing its hash')
+        self._blocks = [Chain.__genesis]
+        Chain.__genesis.chain = self
 
+    @property
+    def genesis(self):
+        return Chain.__genesis
+
+    @property
+    def last_node(self):
+        return self._blocks[len(self._blocks) - 1]
+
+    def get_node(self, hash_str):
+        for node in self._blocks:
+            if hash_str == node.hash:
+                return node
+        return None
+
+    def new_node(self, data):
+        previous_node = self._blocks[len(self._blocks) - 1]
+        previous_hash = previous_node.hash
+        new_hash_src = previous_hash + str(data if data else 'doodlepoodlemoodledoo')
+        new_hash = hashlib.md5(new_hash_src).hexdigest()
+        
+        self._blocks.append(Node(data, new_hash, self))
+        return self
+
+    @property
     def size(self):
-        return len(self._chain)
+        return len(self._blocks)
 
-    def get_gen_hash(self):
-        if self._chain[0].hash:
-            return self._chain[0].hash
-        
-        raise ValueError('The genesis block node is missing its hash')
+    def genesis_hash(self):
+        return self.genesis.hash
 
 class Node(object):
     """
     A Node represents a block in a unique blockchain. It contains a unique hash,
     a reference to the previous block's hash, and the hard reference to its parent chain.
-    The most forward Node should be responsible for creating a new Node and update 
+    The most forward Node should be responsible for creating a new Node and update
     the Chain for bookkeeping purpose.
-    
-    >>> hash = hashlib.md5('doodle').hexdigest()
-    >>> node = Node(hash)
-    >>> assert node is not None
+
+    >>> init_hash = hashlib.md5('doodle').hexdigest()
+    >>> node = Node(data=None, hash_str=init_hash)
+    >>> assert node
+    >>> chain = Chain(genesis=node)
     >>> assert node.hash == hashlib.md5('doodle').hexdigest()
-    >>> assert node.id == 0
-    >>> assert node.is_genesis() 
+    >>> assert node.is_genesis()
+    >>> assert chain.genesis == node
     """
-    def __init__(self, hash_str=None, genesis=False):
-        if hash_str is not None:
-            self.hash = hash_str
-        self.previous_hashes = []
-        self.id = 0
-        self.data = None
+    def __init__(self, data, hash_str=None, chain=None):
+        self.data = data
+        self.hash = hash_str
+        self.chain = chain
 
     def is_genesis(self):
-        return not (self.id and self.previous_hashes)
-
-    def new_block(self, hash_str=''):
-        forward_block = Node()
-        forward_block.hash = hash_str
-        self.chain = self.chain.append(forward_block)
+        return self.hash == self.chain.genesis.hash
 
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    
-        
-        
