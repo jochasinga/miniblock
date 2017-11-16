@@ -27,7 +27,7 @@ class Chain(object):
         """
         if not genesis:
             hash_str = hashlib.md5('doodlepoodlemoodledoo').hexdigest()
-            Chain.__genesis = Node(hash_str)
+            Chain.__genesis = Node(data="I'm genesis", hash_str=hash_str)
         else:
             Chain.__genesis = genesis
 
@@ -63,6 +63,14 @@ class Chain(object):
 
     def genesis_hash(self):
         return self.genesis.hash
+
+    def __str__(self):
+        result = ''
+        for i, block in enumerate(self._blocks):
+            arrow = '' if i == self.size - 1 else ' -> '
+            block_str = '|{hash}|{arrow}'.format(hash=block.hash, arrow=arrow)
+            result += block_str
+        return result
 
 class Node(object):
     """
