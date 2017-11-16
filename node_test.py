@@ -25,7 +25,14 @@ def blockchain_test():
 
     chain.new_node(data='world')
 
-    expected_latest_hash = hashlib.md5(expected_hash + 'world').hexdigest()
+    expected_hash = hashlib.md5(expected_hash + 'world').hexdigest()
 
     assert chain.size == 3
-    assert chain.last_node.hash == expected_latest_hash
+    assert chain.last_node.hash == expected_hash
+
+    chain.new_node(data='007')
+
+    expected_hash = hashlib.md5(expected_hash + '007').hexdigest()
+
+    assert chain.size == 4
+    assert chain.last_node.hash == expected_hash
